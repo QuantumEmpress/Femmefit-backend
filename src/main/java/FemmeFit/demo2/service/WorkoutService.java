@@ -1,99 +1,124 @@
+// File: src/main/java/FemmeFit/demo2/service/WorkoutService.java
 package FemmeFit.demo2.service;
 
-import FemmeFit.demo2.entity.User;
-import FemmeFit.demo2.entity.Workout;
-import FemmeFit.demo2.repository.UserRepository;
-import FemmeFit.demo2.repository.WorkoutRepository;
+import FemmeFit.demo2.dto.*;
+import FemmeFit.demo2.entity.*;
+import FemmeFit.demo2.exception.InvalidDateException;
+import FemmeFit.demo2.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import FemmeFit.demo2.dto.ExerciseDTO;
+import FemmeFit.demo2.dto.WorkoutRequestDTO;
+import FemmeFit.demo2.dto.WorkoutResponseDTO;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class WorkoutService {
-    @Autowired
-    private WorkoutRepository workoutRepository;
+
+    private final WorkoutRepository workoutRepository;
+    private final UserRepository userRepository;
+    private final ExerciseRepository exerciseRepository;
 
     @Autowired
-    private UserRepository userRepository;
+    public WorkoutService(WorkoutRepository workoutRepository,
+                          UserRepository userRepository,
+                          ExerciseRepository exerciseRepository) {
+        this.workoutRepository = workoutRepository;
+        this.userRepository = userRepository;
+        this.exerciseRepository = exerciseRepository;
+    }
 
-    /**
-     * Log a new workout for a user.
-     *
-     * @param workout The workout to be logged.
-     * @return The saved workout.
-     */
-    public Workout logWorkout(Workout workout) {
-        // Ensure the user object is not null
-        if (workout.getUser() == null || workout.getUser().getId() == null) {
-            throw new RuntimeException("User ID is required");
+    @Transactional
+    public WorkoutResponseDTO createWorkout(WorkoutRequestDTO workoutDTO, Long userId) {
+        // Validate workout date
+        if (workoutDTO.getDate() == null) {
+            throw new InvalidDateException("Workout date cannot be null");
+        }
+        if (workoutDTO.getDate().isAfter(LocalDate.now())) {
+            throw new InvalidDateException("Workout date cannot be in the future");
         }
 
-        // Fetch the user from the database
-        User user = userRepository.findById(workout.getUser().getId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        // Get user
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
-        // Set the user in the workout
+        // Create workout
+        Workout workout = new Workout();
+        workout.setDate(workoutDTO.getDate());
+        workout.setDuration(workoutDTO.getDuration());
+        workout.setTotalCaloriesBurned(workoutDTO.getTotalCaloriesBurned());
         workout.setUser(user);
 
-        // Save the workout
-        return workoutRepository.save(workout);
+        // Add exercises
+        if (workoutDTO.getExerciseIds() != null && !workoutDTO.getExerciseIds().isEmpty()) {
+            Set<Exercise> exercises = exerciseRepository.findAllById(workoutDTO.getExerciseIds())
+                    .stream()
+                    .peek(ex -> {
+                        if (ex.getDate() == null) {
+                            throw new InvalidDateException("Exercise date cannot be null for exercise ID: " + ex.getId());
+                        }
+                        if (ex.getDate().isAfter(LocalDate.now())) {
+                            throw new InvalidDateException("Exercise date cannot be in future for exercise ID: " + ex.getId());
+                        }
+                    })
+                    .collect(Collectors.toSet());
+            workout.setExercises(exercises);
+        }
+
+        Workout savedWorkout = workoutRepository.save(workout);
+        return mapToResponseDTO(savedWorkout);
     }
 
-    /**
-     * Fetch all workouts for a specific user.
-     *
-     * @param userId The ID of the user.
-     * @return A list of workouts for the user.
-     */
-    public List<Workout> getWorkoutsByUserId(Long userId) {
-        return workoutRepository.findByUser_Id(userId);
+    public List<WorkoutResponseDTO> getWorkoutsByUserId(Long userId) {
+        return workoutRepository.findByUserId(userId)
+                .stream()
+                .map(this::mapToResponseDTO)
+                .collect(Collectors.toList());
     }
 
-    /**
-     * Fetch a workout by its ID.
-     *
-     * @param workoutId The ID of the workout.
-     * @return The workout.
-     */
-    public Workout getWorkoutById(Long workoutId) {
-        return workoutRepository.findById(workoutId)
-                .orElseThrow(() -> new RuntimeException("Workout not found"));
+    public WorkoutResponseDTO getWorkoutById(Long id) {
+        return workoutRepository.findById(id)
+                .map(this::mapToResponseDTO)
+                .orElseThrow(() -> new RuntimeException("Workout not found with id: " + id));
     }
 
-    /**
-     * Update an existing workout.
-     *
-     * @param workoutId The ID of the workout to update.
-     * @param updatedWorkout The updated workout details.
-     * @return The updated workout.
-     */
-    public Workout updateWorkout(Long workoutId, Workout updatedWorkout) {
-        Workout existingWorkout = workoutRepository.findById(workoutId)
-                .orElseThrow(() -> new RuntimeException("Workout not found"));
-
-        // Update the fields
-        existingWorkout.setExerciseName(updatedWorkout.getExerciseName());
-        existingWorkout.setDuration(updatedWorkout.getDuration());
-        existingWorkout.setCaloriesBurned(updatedWorkout.getCaloriesBurned());
-        existingWorkout.setDate(updatedWorkout.getDate());
-
-        // Save the updated workout
-        return workoutRepository.save(existingWorkout);
+    @Transactional
+    public void deleteWorkout(Long id) {
+        if (!workoutRepository.existsById(id)) {
+            throw new RuntimeException("Workout not found with id: " + id);
+        }
+        workoutRepository.deleteById(id);
     }
 
-    /**
-     * Delete a workout by its ID.
-     *
-     * @param workoutId The ID of the workout to delete.
-     */
-    public void deleteWorkout(Long workoutId) {
-        Workout workout = workoutRepository.findById(workoutId)
-                .orElseThrow(() -> new RuntimeException("Workout not found"));
+    private WorkoutResponseDTO mapToResponseDTO(Workout workout) {
+        WorkoutResponseDTO dto = new WorkoutResponseDTO();
+        dto.setId(workout.getId());
+        dto.setDate(workout.getDate());
+        dto.setDuration(workout.getDuration());
+        dto.setTotalCaloriesBurned(workout.getTotalCaloriesBurned());
 
-        workoutRepository.delete(workout);
+        if (workout.getExercises() != null) {
+            dto.setExercises(workout.getExercises().stream()
+                    .map(this::mapToExerciseDTO)
+                    .collect(Collectors.toList()));
+        }
+
+        return dto;
     }
-    public List<Workout> getAllWorkouts() {
-        return workoutRepository.findAll();
+
+    private ExerciseDTO mapToExerciseDTO(Exercise exercise) {
+        ExerciseDTO dto = new ExerciseDTO();
+        dto.setId(exercise.getId());
+        dto.setName(exercise.getName());
+        dto.setDescription(exercise.getDescription());
+        dto.setCaloriesBurned(exercise.getCaloriesBurned());
+        dto.setDuration(exercise.getDuration());
+        dto.setDate(exercise.getDate());
+        return dto;
     }
 }

@@ -1,25 +1,66 @@
 package FemmeFit.demo2.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "goals")
 public class Goal {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+   @GeneratedValue(strategy = GenerationType.IDENTITY)
+   private Long id;
+    @NotNull(message = "Target calories is required")
+   @Column(nullable = false)
+   private Integer targetCalories;
+  @NotNull(message = "Target duration is required")
+  @Column(nullable = false)
+  private Integer targetDuration;
 
-    private String description; // e.g., "Lose 5kg in 2 months"
-    private int targetCalories; // Target calories to burn
-    private int targetWorkoutsPerWeek; // Target workouts per week
-    private LocalDate startDate;
-    private LocalDate endDate;
+   @NotNull(message = "Target date is required")
+    @Column(nullable = false)
+   private LocalDate targetDate;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnoreProperties({"workouts", "goals", "exercises"}) // Prevent infinite recursion
-    private User user;
+    @Column
+  private String description;
+
+  @Column(columnDefinition = "datetime(6) default CURRENT_TIMESTAMP")
+    private LocalDateTime createdAt;
+   @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id", nullable = false)
+  private User user;
+
+   @PrePersist
+    protected void onCreate() {
+      this.createdAt = LocalDateTime.now();
+   }
+//    Constructors
+    public Goal() {}
+
+  public Goal(Integer targetCalories, Integer targetDuration, LocalDate targetDate,
+              String description, User user) {
+       this.targetCalories = targetCalories;
+      this.targetDuration = targetDuration;
+     this.targetDate = targetDate;
+    this.description = description;
+     this.user = user;
+    }
+
+//     Progress calculation methods
+    public Double getProgressPercentage(Integer currentCalories, Integer currentDuration) {
+        if (targetCalories == 0 || targetDuration == 0) return 0.0;
+       double caloriesProgress = (currentCalories.doubleValue() / targetCalories) * 100;
+       double durationProgress = (currentDuration.doubleValue() / targetDuration) * 100;
+       return (caloriesProgress + durationProgress) / 2;
+    }
+
+    public String getStatus() {
+        LocalDate currentDate = LocalDate.now();
+        if (currentDate.isAfter(targetDate)) return "Overdue";
+        if (currentDate.isEqual(targetDate)) return "Due Today";
+        return "In Progress";
+    }
 
     // Getters and Setters
     public Long getId() {
@@ -30,6 +71,30 @@ public class Goal {
         this.id = id;
     }
 
+    public Integer getTargetCalories() {
+        return targetCalories;
+    }
+
+    public void setTargetCalories(Integer targetCalories) {
+        this.targetCalories = targetCalories;
+    }
+
+    public Integer getTargetDuration() {
+        return targetDuration;
+    }
+
+    public void setTargetDuration(Integer targetDuration) {
+        this.targetDuration = targetDuration;
+    }
+
+    public LocalDate getTargetDate() {
+        return targetDate;
+    }
+
+    public void setTargetDate(LocalDate targetDate) {
+        this.targetDate = targetDate;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -38,43 +103,15 @@ public class Goal {
         this.description = description;
     }
 
-    public int getTargetCalories() {
-        return targetCalories;
-    }
-
-    public void setTargetCalories(int targetCalories) {
-        this.targetCalories = targetCalories;
-    }
-
-    public int getTargetWorkoutsPerWeek() {
-        return targetWorkoutsPerWeek;
-    }
-
-    public void setTargetWorkoutsPerWeek(int targetWorkoutsPerWeek) {
-        this.targetWorkoutsPerWeek = targetWorkoutsPerWeek;
-    }
-
-    public LocalDate getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(LocalDate startDate) {
-        this.startDate = startDate;
-    }
-
-    public LocalDate getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(LocalDate endDate) {
-        this.endDate = endDate;
-    }
-
     public User getUser() {
         return user;
     }
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 }

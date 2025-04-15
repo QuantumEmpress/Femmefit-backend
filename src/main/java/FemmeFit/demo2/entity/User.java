@@ -1,8 +1,10 @@
 package FemmeFit.demo2.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -16,12 +18,17 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Username is required")
+    @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
     @Column(nullable = false, unique = true)
     private String username;
 
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email should be valid")
     @Column(nullable = false, unique = true)
     private String email;
 
+    @NotBlank(message = "Password is required")
     @Column(nullable = false)
     private String password;
 
@@ -35,14 +42,7 @@ public class User {
     private Set<Exercise> exercises = new HashSet<>();
 
     // ✅ Constructors
-    public User() {
-    }
 
-    public User(String username, String email, String password) {
-        this.username = username;
-        this.email = email;
-        this.password = password;
-    }
 
     // ✅ Getters & Setters
     public Long getId() {
@@ -99,5 +99,36 @@ public class User {
 
     public void setExercises(Set<Exercise> exercises) {
         this.exercises = exercises;
+    }
+
+    // Helper methods for managing relationships
+    public void addWorkout(Workout workout) {
+        workouts.add(workout);
+        workout.setUser(this);
+    }
+
+    public void removeWorkout(Workout workout) {
+        workouts.remove(workout);
+        workout.setUser(null);
+    }
+
+    public void addGoal(Goal goal) {
+        goals.add(goal);
+        goal.setUser(this);
+    }
+
+    public void removeGoal(Goal goal) {
+        goals.remove(goal);
+        goal.setUser(null);
+    }
+
+    public void addExercise(Exercise exercise) {
+        exercises.add(exercise);
+        exercise.setUser(this);
+    }
+
+    public void removeExercise(Exercise exercise) {
+        exercises.remove(exercise);
+        exercise.setUser(null);
     }
 }

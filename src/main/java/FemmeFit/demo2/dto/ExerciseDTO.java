@@ -1,56 +1,28 @@
-package FemmeFit.demo2.entity;
-
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+package FemmeFit.demo2.dto;
 
 import java.time.LocalDate;
 
-@Entity
-@Table(name = "exercises")
-public class Exercise {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class ExerciseDTO {
     private Long id;
-
-    @NotBlank(message = "Name is required")
-    @Column(nullable = false)
     private String name;
-
-    @NotBlank(message = "Description is required")
-    @Column(nullable = false)
     private String description;
-
-    @NotNull(message = "Calories burned is required")
-    @Column(nullable = false)
     private Integer caloriesBurned;
-
-    @NotNull(message = "Duration is required")
-    @Column(nullable = false)
-    private Integer duration; // in minutes
-
-    @NotNull(message = "Date is required")
-    @Column(nullable = false)
+    private Integer duration;
     private LocalDate date;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    // Constructors, getters, and setters
+    public ExerciseDTO() {}
 
-    // Constructors
-    public Exercise() {}
-
-    public Exercise(String name, String description, Integer caloriesBurned, Integer duration, LocalDate date, User user) {
+    public ExerciseDTO(Long id, String name, String description, Integer caloriesBurned,
+                       Integer duration,    LocalDate date) {
+        this.id = id;
         this.name = name;
         this.description = description;
         this.caloriesBurned = caloriesBurned;
         this.duration = duration;
         this.date = date;
-        this.user = user;
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -98,12 +70,5 @@ public class Exercise {
     public void setDate(LocalDate date) {
         this.date = date;
     }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
+// Getters and setters for all fields
 }
