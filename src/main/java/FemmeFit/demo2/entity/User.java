@@ -32,15 +32,6 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    private Set<Workout> workouts = new HashSet<>();
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    private Set<Goal> goals = new HashSet<>();
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    private Set<Exercise> exercises = new HashSet<>();
-
     // ✅ Constructors
 
 
@@ -75,60 +66,5 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public Set<Workout> getWorkouts() {
-        return workouts;
-    }
-
-    public void setWorkouts(Set<Workout> workouts) {
-        this.workouts = workouts;
-    }
-
-    public Set<Goal> getGoals() {
-        return goals;
-    }
-
-    public void setGoals(Set<Goal> goals) {
-        this.goals = goals;
-    }
-
-    public Set<Exercise> getExercises() {
-        return exercises;
-    }
-
-    public void setExercises(Set<Exercise> exercises) {
-        this.exercises = exercises;
-    }
-
-    // Helper methods for managing relationships
-    public void addWorkout(Workout workout) {
-        workouts.add(workout);
-        workout.setUser(this);
-    }
-
-    public void removeWorkout(Workout workout) {
-        workouts.remove(workout);
-        workout.setUser(null);
-    }
-
-    public void addGoal(Goal goal) {
-        goals.add(goal);
-        goal.setUser(this);
-    }
-
-    public void removeGoal(Goal goal) {
-        goals.remove(goal);
-        goal.setUser(null);
-    }
-
-    public void addExercise(Exercise exercise) {
-        exercises.add(exercise);
-        exercise.setUser(this);
-    }
-
-    public void removeExercise(Exercise exercise) {
-        exercises.remove(exercise);
-        exercise.setUser(null);
     }
 }
