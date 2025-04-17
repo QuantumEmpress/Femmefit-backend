@@ -5,6 +5,8 @@ import FemmeFit.demo2.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class UserService {
 
@@ -18,10 +20,7 @@ public class UserService {
 
     // Method to create a new user
     public User createUser(String username, String email, String password) {
-        if (userRepository.findByUsername(username).isPresent()) {
-            throw new RuntimeException("Username already exists");
-        }
-        if (userRepository.findByEmail(email).isPresent()) {
+        if (userRepository.findById(email).isPresent()) {
             throw new RuntimeException("Email already exists");
         }
 
@@ -42,8 +41,12 @@ public class UserService {
         return user;
     }
 
-    public User getUserById(Long id) {
-        return userRepository.findById(id).orElse(null);
+    public Optional<User> getByUserId(String email) {
+        return userRepository.findById(email);
+    }
+
+    public User getUserById(String email) {
+        return userRepository.findById(email).orElse(null);
     }
 }
 
