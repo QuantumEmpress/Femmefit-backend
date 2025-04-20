@@ -1,6 +1,8 @@
 package FemmeFit.demo2.service;
 
+import FemmeFit.demo2.dto.ExerciseDto;
 import FemmeFit.demo2.dto.WorkoutDto;
+import FemmeFit.demo2.entity.Exercise;
 import FemmeFit.demo2.entity.User;
 import FemmeFit.demo2.entity.Workout;
 import FemmeFit.demo2.repository.UserRepository;
@@ -12,9 +14,10 @@ import java.util.stream.Collectors;
 
 @Service
 public class WorkoutService {
-    private final WorkoutRepository workoutRepository;
-    private final UserService userService;
-    private final UserRepository userRepository;
+    public final WorkoutRepository workoutRepository;
+    public final UserService userService;
+    public final UserRepository userRepository;
+
 
     public WorkoutService(WorkoutRepository workoutRepository, UserService userService, UserRepository userRepository) {
         this.workoutRepository = workoutRepository;
@@ -22,45 +25,74 @@ public class WorkoutService {
         this.userRepository = userRepository;
     }
 
-    public WorkoutDto createWorkout(WorkoutDto workoutDto){
-        Workout newWorkout=new Workout();
-        newWorkout.setId(workoutDto.getId());
-        newWorkout.setTitle(workoutDto.getTitle());
-        newWorkout.setSubtitle(workoutDto.getSubtitle());
-        newWorkout.setCalories(workoutDto.getCalories());
-
+    public WorkoutDto createWorkout(WorkoutDto workoutDto) {
+        Workout workout = new Workout();
+        workout.setWorkoutIntensity(workoutDto.getWorkoutIntensity());
+        workout.setSubtitle(workoutDto.getSubtitle());
+        workout.setTitle(workoutDto.getTitle());
+        workout.setCalories(workoutDto.getCalories());
+        workout.setDuration(workoutDto.getDuration());
+        workout.setImagePath(workoutDto.getImagePath());
         if (workoutDto.getExercises() != null) {
-            newWorkout.setExercises(workoutDto.getExercises());
-            newWorkout.getExercises().forEach(exercise -> exercise.setWorkout(newWorkout));
+            List<Exercise> exercises = workoutDto.getExercises().stream()
+                    .map(exerciseDto -> {
+                        Exercise exercise = new Exercise();
+                        exercise.setReps(exerciseDto.getReps());
+                        exercise.setSets(exerciseDto.getSets());
+                        exercise.setRestInterval(exerciseDto.getRestInterval());
+                        exercise.setName(exerciseDto.getName());
+                        exercise.setWorkout(workout);
+                        return exercise;
+                    }).collect(Collectors.toList());
+            workout.setExercises(exercises);
         }
-
-        Workout savedWorkout = workoutRepository.save(newWorkout);
-        return new WorkoutDto(savedWorkout, null);
+        Workout savedWorkout = workoutRepository.save(workout);
+        return mapToDto(savedWorkout);
     }
 
-    public List<WorkoutDto> getAllWorkouts(){
-       return workoutRepository.findAll().stream()
-                .map(WorkoutDto::new)
-                .collect(Collectors.toList());
+    public WorkoutDto mapToDto(Workout workout) {
+        WorkoutDto workoutDto = new WorkoutDto();
+        workoutDto.setId(workout.getId());
+        workoutDto.setTitle(workout.getTitle());
+        workoutDto.setSubtitle(workout.getSubtitle());
+        workoutDto.setImagePath(workout.getImagePath());
+        workoutDto.setCalories(workout.getCalories());
+        workoutDto.setDuration(workout.getDuration());
+        workoutDto.setWorkoutIntensity(workout.getWorkoutIntensity());
+        if (workout.getExercises() != null) {
+            List<ExerciseDto> exerciseDtos = workout.getExercises().stream()
+                    .map(exercise -> {
+                        ExerciseDto exerciseDto = new ExerciseDto();
+                        exerciseDto.setId(exercise.getId());
+                        exerciseDto.setName(exercise.getName());
+                        exerciseDto.setReps(exercise.getReps());
+                        exerciseDto.setSets(exercise.getSets());
+                        exerciseDto.setRestInterval(exercise.getRestInterval());
+                        return exerciseDto;
+                    })
+                    .collect(Collectors.toList());
+            workoutDto.setExercises(exerciseDtos);
+        }
+        return workoutDto;
     }
 
-    public User addWorkoutToUser(String userId, Long workoutId) {
-        User user = userService.getUserById(userId);
-        Workout workout = workoutRepository.findById(workoutId)
-                .orElseThrow(() -> new RuntimeException("Workout not found"));
-
-        user.getSavedWorkouts().add(workout);
-        workout.getUsersWhoAdded().add(user);
-
-        workoutRepository.save(workout);
+    public User updateUserWorkout(String userEmail, List<Long> workoutIds) {
+        User user = userService.getUserById(userEmail);
+        List<Workout> workouts = workoutRepository.findAllById(workoutIds);
+        user.getSavedWorkouts().addAll(workouts);
         return userRepository.save(user);
+
     }
 
-    public List<WorkoutDto> getUserWorkouts(String userId){
-        User user = userService.getUserById(userId);
-        return user.getSavedWorkouts().stream()
-                .map(WorkoutDto::new)
-                .collect(Collectors.toList());
-    }
+    public List<WorkoutDto> getUnselectedWorkouts(String userEmail) {
+        User user = userService.getUserById(userEmail);
+        List<Long> userWorkoutIds = user.getSavedWorkouts().stream().map(Workout::getId).collect(Collectors.toList());
+        if (userWorkoutIds.isEmpty()) {
+            return workoutRepository.findAll().stream()
+                    .map(workout -> new WorkoutDto(workout, userEmail))
+                    .collect(Collectors.toList());
+        }
+        return workoutRepository.findByIdNotIn(userWorkoutIds).stream().map(workout -> new WorkoutDto(workout, userEmail)).collect(Collectors.toList());
 
+    }
 }

@@ -1,39 +1,32 @@
 
-package FemmeFit.demo2.entity;
+package FemmeFit.demo2.dto;
 
+import FemmeFit.demo2.entity.Workout;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
-@Entity
-@Table(name = "exercises")
-public class Exercise {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+public class ExerciseDto {
+
     private Long id;
 
     private String name;
     private int reps;
-    private  int sets;
-    private  int restInterval;
+    private int sets;
+    private int restInterval;
 
-    @ManyToOne
-    @JoinColumn(name = "workout_id", nullable = false)
-    @JsonBackReference
-    private Workout workout;
 
     // Getters and Setters
 
-    public Exercise(Long id, String name, Workout workout, int reps,int sets,int restInterval) {
+    public ExerciseDto(Long id, String name, int reps, int sets, int restInterval) {
         this.id = id;
         this.name = name;
-        this.workout = workout;
-
-        this.restInterval=restInterval;
-        this.reps=reps;
-        this.sets=sets;
+        this.restInterval = restInterval;
+        this.reps = reps;
+        this.sets = sets;
     }
 
-    public Exercise() {
+    public ExerciseDto() {
     }
 
     public Long getId() {
@@ -52,13 +45,6 @@ public class Exercise {
         this.name = name;
     }
 
-    public Workout getWorkout() {
-        return workout;
-    }
-
-    public void setWorkout(Workout workout) {
-        this.workout = workout;
-    }
 
     public int getReps() {
         return reps;

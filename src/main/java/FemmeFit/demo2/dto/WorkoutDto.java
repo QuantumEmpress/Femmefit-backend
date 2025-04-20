@@ -1,38 +1,47 @@
 package FemmeFit.demo2.dto;
 
 import FemmeFit.demo2.entity.Exercise;
-import FemmeFit.demo2.entity.User;
 import FemmeFit.demo2.entity.Workout;
+import FemmeFit.demo2.enums.WorkoutIntensity;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class WorkoutDto {
+    private WorkoutIntensity workoutIntensity;
+    private String imagePath;
     private Long id;
     private String title;
     private String subtitle;
     private int duration;
     private int calories;
     private boolean isAddedByUser;
-    private User user;
-    private List<Exercise> exercises;
+    private List<ExerciseDto> exercises;
 
     public WorkoutDto() {
     }
 
-    public WorkoutDto(Workout workout, Long userId) {
+    public WorkoutDto(Workout workout, String userId) {
         this.id = workout.getId();
         this.title = workout.getTitle();
         this.subtitle = workout.getSubtitle();
         this.duration = workout.getDuration();
         this.calories = workout.getCalories();
-        this.user = (User) workout.getUser();
-        this.exercises = workout.getExercises();
+        this.imagePath=workout.getImagePath();
+        this.workoutIntensity=workout.getWorkoutIntensity();
         this.isAddedByUser = workout.getUsersWhoAdded().stream()
                 .anyMatch(user -> user.getEmail().equals(userId));
+        if (workout.getExercises() !=null){
+            this.exercises=workout.getExercises().stream().map(exercise -> new ExerciseDto(
+                    exercise.getId(),
+                    exercise.getName(),
+                    exercise.getReps(),
+                    exercise.getSets(),
+                    exercise.getRestInterval()
+            )).collect(Collectors.toList());
+        }
     }
 
-    public WorkoutDto(Workout workout) {
-    }
 
     public Long getId() {
         return id;
@@ -82,19 +91,27 @@ public class WorkoutDto {
         isAddedByUser = addedByUser;
     }
 
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public List<Exercise> getExercises() {
+    public List<ExerciseDto> getExercises() {
         return exercises;
     }
 
-    public void setExercises(List<Exercise> exercises) {
+    public void setExercises(List<ExerciseDto> exercises) {
         this.exercises = exercises;
+    }
+
+    public WorkoutIntensity getWorkoutIntensity() {
+        return workoutIntensity;
+    }
+
+    public void setWorkoutIntensity(WorkoutIntensity workoutIntensity) {
+        this.workoutIntensity = workoutIntensity;
+    }
+
+    public String getImagePath() {
+        return imagePath;
+    }
+
+    public void setImagePath(String imagePath) {
+        this.imagePath = imagePath;
     }
 }
