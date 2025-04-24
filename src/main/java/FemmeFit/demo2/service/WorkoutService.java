@@ -95,4 +95,34 @@ public class WorkoutService {
         return workoutRepository.findByIdNotIn(userWorkoutIds).stream().map(workout -> new WorkoutDto(workout, userEmail)).collect(Collectors.toList());
 
     }
+
+ 
+    public List<WorkoutDto> getUserWorkouts(String userId) {
+        User user = userService.getUserById(userId);
+        return user.getSavedWorkouts().stream()
+                .map(workout -> new WorkoutDto(workout, userId))
+                .collect(Collectors.toList());
+    }
+    public void removeWorkoutFromUser(String userEmail, Long workoutId) {
+        // 1. Find the user
+        User user = userService.getUserById(userEmail);
+        if (user == null) {
+            throw new RuntimeException("User not found with email: " + userEmail);
+        }
+
+        // 2. Check if the user has saved workouts
+        if (user.getSavedWorkouts() == null || user.getSavedWorkouts().isEmpty()) {
+            throw new RuntimeException("User has no saved workouts");
+        }
+
+        // 3. Remove the workout if it exists in the user's list
+        boolean wasRemoved = user.getSavedWorkouts().removeIf(workout -> workout.getId().equals(workoutId));
+
+        if (!wasRemoved) {
+            throw new RuntimeException("Workout not found in user's saved workouts");
+        }
+
+        // 4. Save the updated user
+        userRepository.save(user);
+    }
 }
