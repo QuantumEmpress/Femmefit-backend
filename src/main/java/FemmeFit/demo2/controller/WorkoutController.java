@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/workout")
+@RequestMapping("/api/workout")
 public class WorkoutController {
     private final WorkoutService workoutService;
 

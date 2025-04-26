@@ -67,7 +67,6 @@ public class WorkoutProgressService {
         return convertToDto(savedProgress);
     }
 
-    @Transactional
     public ExerciseProgressDto updateExerciseProgress(Long workoutProgressId, Long exerciseId, int completedSets) {
         WorkoutProgress workoutProgress = workoutProgressRepository.findById(workoutProgressId)
                 .orElseThrow(() -> new RuntimeException("Workout progress not found"));
@@ -75,8 +74,14 @@ public class WorkoutProgressService {
         Exercise exercise = exerciseRepository.findById(exerciseId)
                 .orElseThrow(() -> new RuntimeException("Exercise not found"));
 
-        ExerciseProgress exerciseProgress = (ExerciseProgress) exerciseProgressRepository
+        List<ExerciseProgress> exerciseProgresses = exerciseProgressRepository
                 .findByWorkoutProgressAndExercise(workoutProgress, exercise);
+
+        if (exerciseProgresses.isEmpty()) {
+            throw new RuntimeException("Exercise progress not found");
+        }
+
+        ExerciseProgress exerciseProgress = exerciseProgresses.getFirst();
 
         exerciseProgress.setCompletedSets(completedSets);
         if (completedSets >= exercise.getSets()) {
@@ -144,5 +149,20 @@ public class WorkoutProgressService {
         dto.setCompletedSets(progress.getCompletedSets());
         dto.setCompleted(progress.isCompleted());
         return dto;
+    }
+
+    public WorkoutProgressDto getIncompleteWorkoutProgress(String userId, Long workoutId) {
+        User user = userService.getUserById(userId);
+        Workout workout = workoutRepository.findById(workoutId)
+                .orElseThrow(() -> new RuntimeException("Workout not found"));
+
+        List<WorkoutProgress> incompleteProgress = workoutProgressRepository
+                .findByUserAndWorkoutAndCompletedFalse(user, workout);
+
+        if (incompleteProgress.isEmpty()) {
+            return null;
+        }
+
+        return convertToDto(incompleteProgress.getFirst());
     }
 }

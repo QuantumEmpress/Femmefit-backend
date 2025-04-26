@@ -41,4 +41,12 @@ public class WorkoutProgressController {
     public List<WorkoutProgressDto> getUserWorkoutHistory(@PathVariable String userId) {
         return workoutProgressService.getUserWorkoutHistory(userId);
     }
+
+    @GetMapping("/incomplete/{userId}/{workoutId}")
+    public WorkoutProgressDto getIncompleteWorkoutProgress(
+            @PathVariable String userId,
+            @PathVariable Long workoutId
+    ) {
+        return workoutProgressService.getIncompleteWorkoutProgress(userId, workoutId);
+    }
 }
