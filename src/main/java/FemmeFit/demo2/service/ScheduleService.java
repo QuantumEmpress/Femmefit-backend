@@ -28,6 +28,7 @@ public class ScheduleService {
         this.userRepository = userRepository;
         this.workoutRepository = workoutRepository;
     }
+
     @Transactional
     public ScheduleDto createSchedule(ScheduleDto scheduleDto) {
         User user = userRepository.findById(scheduleDto.getUserId())

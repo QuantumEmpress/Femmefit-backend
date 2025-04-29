@@ -2,10 +2,14 @@ package FemmeFit.demo2.controller;
 
 import FemmeFit.demo2.dto.ExerciseProgressDto;
 import FemmeFit.demo2.dto.WorkoutProgressDto;
+import FemmeFit.demo2.entity.WorkoutProgress;
 import FemmeFit.demo2.service.WorkoutProgressService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/progress")
@@ -49,4 +53,5 @@ public class WorkoutProgressController {
     ) {
         return workoutProgressService.getIncompleteWorkoutProgress(userId, workoutId);
     }
+
 }
