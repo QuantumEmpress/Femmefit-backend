@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/progress")
@@ -43,7 +44,10 @@ public class WorkoutProgressController {
 
     @GetMapping("/history/{userId}")
     public List<WorkoutProgressDto> getUserWorkoutHistory(@PathVariable String userId) {
-        return workoutProgressService.getUserWorkoutHistory(userId);
+        List<WorkoutProgressDto> progressList = workoutProgressService.getUserWorkoutHistory(userId);
+        return progressList.stream().peek(progress -> {
+            progress.setWorkoutId(progress.getWorkoutId());
+        }).collect(Collectors.toList());
     }
 
     @GetMapping("/incomplete/{userId}/{workoutId}")
@@ -52,6 +56,18 @@ public class WorkoutProgressController {
             @PathVariable Long workoutId
     ) {
         return workoutProgressService.getIncompleteWorkoutProgress(userId, workoutId);
+    }
+
+    @DeleteMapping("/{workoutProgressId}")
+    public ResponseEntity<Void> deleteWorkoutProgress(@PathVariable Long workoutProgressId) {
+        try {
+            workoutProgressService.deleteWorkoutProgress(workoutProgressId);
+            System.out.println("Successfully deleted workout progress: " + workoutProgressId);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            System.err.println("Error deleting workout progress: " + e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
     }
 
 }

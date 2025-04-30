@@ -35,7 +35,6 @@ public class WorkoutProgressService {
         this.exerciseRepository = exerciseRepository;
     }
 
-    @Transactional
     public WorkoutProgressDto startWorkout(String userId, Long workoutId) {
         User user = userService.getUserById(userId);
         Workout workout = workoutRepository.findById(workoutId)
@@ -93,7 +92,6 @@ public class WorkoutProgressService {
         return convertToDto(savedProgress);
     }
 
-    @Transactional
     public WorkoutProgressDto completeWorkout(Long workoutProgressId) {
         WorkoutProgress workoutProgress = workoutProgressRepository.findById(workoutProgressId)
                 .orElseThrow(() -> new RuntimeException("Workout progress not found"));
@@ -121,7 +119,7 @@ public class WorkoutProgressService {
                 .collect(Collectors.toList());
     }
 
-    private WorkoutProgressDto convertToDto(WorkoutProgress progress) {
+    public WorkoutProgressDto convertToDto(WorkoutProgress progress) {
         WorkoutProgressDto dto = new WorkoutProgressDto();
         dto.setId(progress.getId());
         dto.setUserId(progress.getUser().getEmail());
@@ -165,4 +163,34 @@ public class WorkoutProgressService {
 
         return convertToDto(incompleteProgress.getFirst());
     }
+
+    @Transactional
+    public void deleteWorkoutProgress(Long workoutProgressId) {
+        WorkoutProgress progress = workoutProgressRepository.findById(workoutProgressId)
+                .orElseThrow(() -> new RuntimeException("Workout progress not found"));
+
+        // Explicitly delete exercise progresses first (optional, cascade should handle this)
+        exerciseProgressRepository.deleteAll(progress.getExerciseProgresses());
+
+        // Then delete the workout progress
+        workoutProgressRepository.delete(progress);
+    }
+
+//    public WorkoutProgressDto convertToDto(WorkoutProgressDto progress) {
+//        WorkoutProgress workoutProgress = new WorkoutProgress();
+//        workoutProgress.setId(progress.getId());
+//        workoutProgress.setUser(progress.getUserId());
+//        workoutProgress.setWorkout(progress.getWorkoutId());
+//        workoutProgress.setStartTime(progress.getStartTime());
+//        workoutProgress.setEndTime(progress.getEndTime());
+//        workoutProgress.setCompleted(progress.isCompleted());
+//
+//        if (progress.getExerciseProgresses() != null) {
+//            dto.setExerciseProgresses(progress.getExerciseProgresses().stream()
+//                    .map(this::convertToDto)
+//                    .collect(Collectors.toList()));
+//        }
+//
+//        return dto;
+//    }
 }
