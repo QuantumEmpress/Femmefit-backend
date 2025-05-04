@@ -22,6 +22,23 @@ public class WorkoutProgressController {
         this.workoutProgressService = workoutProgressService;
     }
 
+    @GetMapping("/completed/{userId}")
+    public List<WorkoutProgressDto> getCompletedWorkoutsByUser(@PathVariable String userId) {
+        return workoutProgressService.getCompletedWorkoutsByUser(userId);
+    }
+
+    @GetMapping("/completed/{userId}/{workoutId}")
+    public WorkoutProgressDto getMostRecentCompletedProgress(
+            @PathVariable String userId,
+            @PathVariable Long workoutId) {
+        return workoutProgressService.getMostRecentCompletedProgress(userId, workoutId);
+    }
+
+    @GetMapping("/completed/count/{userId}")
+    public long countCompletedWorkoutsByUser(@PathVariable String userId) {
+        return workoutProgressService.countCompletedWorkoutsByUser(userId);
+    }
+
     @PostMapping("/start/{userId}/{workoutId}")
     public WorkoutProgressDto startWorkout(
             @PathVariable String userId,

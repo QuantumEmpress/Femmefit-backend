@@ -21,18 +21,20 @@ public class WorkoutProgressService {
     private final UserService userService;
     private final WorkoutRepository workoutRepository;
     private final ExerciseRepository exerciseRepository;
+    private final UserWorkoutStatsService userWorkoutStatsService;
 
     public WorkoutProgressService(
             WorkoutProgressRepository workoutProgressRepository,
             ExerciseProgressRepository exerciseProgressRepository,
             UserService userService,
             WorkoutRepository workoutRepository,
-            ExerciseRepository exerciseRepository) {
+            ExerciseRepository exerciseRepository, UserWorkoutStatsService userWorkoutStatsService) {
         this.workoutProgressRepository = workoutProgressRepository;
         this.exerciseProgressRepository = exerciseProgressRepository;
         this.userService = userService;
         this.workoutRepository = workoutRepository;
         this.exerciseRepository = exerciseRepository;
+        this.userWorkoutStatsService = userWorkoutStatsService;
     }
 
     public WorkoutProgressDto startWorkout(String userId, Long workoutId) {
@@ -109,6 +111,14 @@ public class WorkoutProgressService {
         });
 
         WorkoutProgress savedProgress = workoutProgressRepository.save(workoutProgress);
+
+        // Update user stats
+        userWorkoutStatsService.updateStats(
+                savedProgress.getUser().getEmail(),
+                savedProgress.getWorkout().getDuration(),
+                savedProgress.getWorkout().getCalories()
+        );
+
         return convertToDto(savedProgress);
     }
 
@@ -164,7 +174,33 @@ public class WorkoutProgressService {
         return convertToDto(incompleteProgress.getFirst());
     }
 
-    @Transactional
+    public List<WorkoutProgressDto> getCompletedWorkoutsByUser(String userId) {
+        User user = userService.getUserById(userId);
+        return workoutProgressRepository.findByUserAndCompletedTrue(user).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    public long countCompletedWorkoutsByUser(String userId) {
+        User user = userService.getUserById(userId);
+        return workoutProgressRepository.countByUserAndCompletedTrue(user);
+    }
+
+    public WorkoutProgressDto getMostRecentCompletedProgress(String userId, Long workoutId) {
+        User user = userService.getUserById(userId);
+        Workout workout = workoutRepository.findById(workoutId)
+                .orElseThrow(() -> new RuntimeException("Workout not found"));
+
+        List<WorkoutProgress> progresses = workoutProgressRepository
+                .findByUserAndWorkoutAndCompletedTrueOrderByEndTimeDesc(user, workout);
+
+        if (progresses.isEmpty()) {
+            return null;
+        }
+
+        return convertToDto(progresses.get(0));
+    }
+
     public void deleteWorkoutProgress(Long workoutProgressId) {
         WorkoutProgress progress = workoutProgressRepository.findById(workoutProgressId)
                 .orElseThrow(() -> new RuntimeException("Workout progress not found"));

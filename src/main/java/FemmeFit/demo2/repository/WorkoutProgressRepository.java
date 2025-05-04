@@ -10,4 +10,7 @@ public interface WorkoutProgressRepository extends JpaRepository<WorkoutProgress
     List<WorkoutProgress> findByUser(User user);
     List<WorkoutProgress> findByUserAndWorkout(User user, Workout workout);
     List<WorkoutProgress> findByUserAndWorkoutAndCompletedFalse(User user, Workout workout);
+    List<WorkoutProgress> findByUserAndCompletedTrue(User user);
+    long countByUserAndCompletedTrue(User user);
+    List<WorkoutProgress> findByUserAndWorkoutAndCompletedTrueOrderByEndTimeDesc(User user, Workout workout);
 }
